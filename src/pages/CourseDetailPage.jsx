@@ -28,6 +28,8 @@ export default function CourseDetailPage() {
   )
 
   const handleAddToCart = () => {
+    if (!course) return
+
     setCart(prev => {
       const found = prev.find(item => item.id === course.id)
       if (found) {
