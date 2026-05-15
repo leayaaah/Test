@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-// import { useSetRecoilState } from 'recoil'
-// import { cartState } from '../store/atoms'
+import { useSetRecoilState } from 'recoil'
+import { cartState } from '../store/atoms'
 import { mockApi } from '../api/mockApi'
 
 export default function CourseListPage() {
@@ -13,9 +13,32 @@ export default function CourseListPage() {
   // - Nếu có lỗi: hiển thị <div className="error-box">{error}</div>
   // - Khi xong: lưu danh sách vào state courses
   // ============================================================
-  const courses = []         // <-- thay state thật vào
-  const loading = false      // <-- thay state thật vào
-  const error = null         // <-- thay state thật vào
+  const [courses, setCourses] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    let active = true
+
+    const fetchCourses = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const response = await mockApi.getCourses()
+        if (active) setCourses(response.data)
+      } catch (err) {
+        if (active) setError(err.message)
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
+    fetchCourses()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
 
   // ============================================================
@@ -24,9 +47,9 @@ export default function CourseListPage() {
   // - Tạo state: levelFilter (lọc theo trình độ: '', 'Cơ bản', 'Trung bình', 'Nâng cao')
   // - Tạo state: sortBy (sắp xếp: '', 'price-asc', 'price-desc')
   // ============================================================
-  const keyword = ''
-  const levelFilter = ''
-  const sortBy = ''
+  const [keyword, setKeyword] = useState('')
+  const [levelFilter, setLevelFilter] = useState('')
+  const [sortBy, setSortBy] = useState('')
 
 
   // ============================================================
@@ -40,7 +63,23 @@ export default function CourseListPage() {
   //   - sortBy === 'price-desc' => giá giảm dần
   // useMemo phải có dependencies đúng để chỉ tính lại khi cần thiết
   // ============================================================
-  const filteredCourses = courses // <-- thay bằng useMemo
+  const filteredCourses = useMemo(() => {
+    const normalizedKeyword = keyword.trim().toLowerCase()
+
+    const filtered = courses.filter(course => {
+      const matchedKeyword = course.title.toLowerCase().includes(normalizedKeyword)
+      const matchedLevel = !levelFilter || course.level === levelFilter
+      return matchedKeyword && matchedLevel
+    })
+
+    if (sortBy === 'price-asc') {
+      return [...filtered].sort((a, b) => a.price - b.price)
+    }
+    if (sortBy === 'price-desc') {
+      return [...filtered].sort((a, b) => b.price - a.price)
+    }
+    return filtered
+  }, [courses, keyword, levelFilter, sortBy])
 
 
   // ============================================================
@@ -53,10 +92,32 @@ export default function CourseListPage() {
   // - Sau đó alert("Đã thêm vào giỏ hàng!")
   // Truyền hàm này xuống mỗi CourseCard qua prop onAddToCart
   // ============================================================
-  // const setCart = useSetRecoilState(cartState)
-  const handleAddToCart = (course) => {
-    // TODO
-  }
+  const setCart = useSetRecoilState(cartState)
+  const handleAddToCart = useCallback((course) => {
+    setCart(prev => {
+      const found = prev.find(item => item.id === course.id)
+
+      if (found) {
+        return prev.map(item =>
+          item.id === course.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      }
+
+      return [
+        ...prev,
+        {
+          id: course.id,
+          title: course.title,
+          price: course.price,
+          image: course.image,
+          quantity: 1
+        }
+      ]
+    })
+    alert('Đã thêm vào giỏ hàng!')
+  }, [setCart])
 
 
   return (
@@ -68,15 +129,15 @@ export default function CourseListPage() {
           type="text"
           placeholder="🔍 Tìm theo tên khóa học..."
           value={keyword}
-          onChange={() => {/* TODO: setKeyword */}}
+          onChange={(e) => setKeyword(e.target.value)}
         />
-        <select value={levelFilter} onChange={() => {/* TODO: setLevelFilter */}}>
+        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
           <option value="">Tất cả trình độ</option>
           <option value="Cơ bản">Cơ bản</option>
           <option value="Trung bình">Trung bình</option>
           <option value="Nâng cao">Nâng cao</option>
         </select>
-        <select value={sortBy} onChange={() => {/* TODO: setSortBy */}}>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
           <option value="">Mặc định</option>
           <option value="price-asc">Giá tăng dần</option>
           <option value="price-desc">Giá giảm dần</option>
@@ -118,18 +179,25 @@ export default function CourseListPage() {
 // new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 // =============================================================
 function CourseCard({ course, onAddToCart }) {
+  const formatPrice = (price) =>
+    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
+
   return (
     <div className="course-card">
-      {/* TODO: Hiển thị thông tin khóa học */}
-      <img src={course?.image} alt={course?.title} />
+      <img src={course.image} alt={course.title} />
       <div className="course-card-body">
-        <span className="level">{/* TODO: course.level */}</span>
-        <h3>{/* TODO: course.title */}</h3>
-        <p className="instructor">👨‍🏫 {/* TODO: course.instructor */}</p>
-        <p className="price">{/* TODO: định dạng giá VND */}</p>
+        <span className="level">{course.level}</span>
+        <h3>{course.title}</h3>
+        <p className="instructor">👨‍🏫 {course.instructor}</p>
+        <p className="price">{formatPrice(course.price)}</p>
       </div>
       <div className="course-card-footer">
-        {/* TODO: 2 nút như mô tả trên */}
+        <Link className="btn btn-outline btn-sm" to={`/courses/${course.id}`}>
+          Xem chi tiết
+        </Link>
+        <button className="btn btn-primary btn-sm" onClick={() => onAddToCart(course)}>
+          Thêm vào giỏ
+        </button>
       </div>
     </div>
   )

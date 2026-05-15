@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
-// import { useSetRecoilState } from 'recoil'
-// import { cartState } from '../store/atoms'
-// import { useFetch } from '../hooks/useFetch'
+import { useSetRecoilState } from 'recoil'
+import { cartState } from '../store/atoms'
+import { useFetch } from '../hooks/useFetch'
 import { mockApi } from '../api/mockApi'
 
 export default function CourseDetailPage() {
@@ -19,10 +19,38 @@ export default function CourseDetailPage() {
   //     - setCart(prev => ...) để thêm course vào giỏ (giống logic câu 4)
   //     - navigate('/cart')  (dùng useNavigate)
   // ============================================================
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const setCart = useSetRecoilState(cartState)
+  const { data: course, loading, error } = useFetch(
+    () => mockApi.getCourseById(id),
+    [id]
+  )
 
-  const course = null
-  const loading = false
-  const error = null
+  const handleAddToCart = () => {
+    setCart(prev => {
+      const found = prev.find(item => item.id === course.id)
+      if (found) {
+        return prev.map(item =>
+          item.id === course.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      }
+
+      return [
+        ...prev,
+        {
+          id: course.id,
+          title: course.title,
+          price: course.price,
+          image: course.image,
+          quantity: 1
+        }
+      ]
+    })
+    navigate('/cart')
+  }
 
   if (loading) return <div className="loading">⏳ Đang tải...</div>
   if (error) return <div className="error-box">❌ {error}</div>
@@ -52,7 +80,11 @@ export default function CourseDetailPage() {
 
         <div className="detail-side">
           <div className="price-big">{formatPrice(course.price)}</div>
-          <button className="btn btn-success" style={{ width: '100%', marginBottom: 8 }}>
+          <button
+            className="btn btn-success"
+            style={{ width: '100%', marginBottom: 8 }}
+            onClick={handleAddToCart}
+          >
             🛒 Thêm vào giỏ hàng
           </button>
           <button className="btn btn-outline" style={{ width: '100%' }}>

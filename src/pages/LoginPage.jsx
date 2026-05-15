@@ -1,6 +1,6 @@
 import { useState } from 'react'
-// import { useRecoilState } from 'recoil'
-// import { userState } from '../store/atoms'
+import { useRecoilState } from 'recoil'
+import { userState } from '../store/atoms'
 
 export default function LoginPage() {
   // ============================================================
@@ -23,11 +23,21 @@ export default function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const user = null // <-- thay bằng useRecoilState
+  const [user, setUser] = useRecoilState(userState)
 
   const handleLogin = (e) => {
     e.preventDefault()
-    // TODO
+    if (!username.trim() || !password.trim()) {
+      setError('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu')
+      return
+    }
+
+    setUser({
+      username: username.trim(),
+      loginTime: new Date().toLocaleString('vi-VN')
+    })
+    setError('')
+    setPassword('')
   }
 
   return (
@@ -36,7 +46,18 @@ export default function LoginPage() {
         {user ? (
           <div style={{ textAlign: 'center' }}>
             <h2>👋 Xin chào!</h2>
-            {/* TODO: Hiển thị thông tin user và nút Đăng xuất */}
+            <p>
+              Xin chào, <b>{user.username}</b>!
+            </p>
+            <p style={{ color: '#6b7280', fontSize: 14 }}>
+              Thời gian đăng nhập: {user.loginTime}
+            </p>
+            <button
+              className="btn btn-outline"
+              onClick={() => setUser(null)}
+            >
+              Đăng xuất
+            </button>
           </div>
         ) : (
           <>

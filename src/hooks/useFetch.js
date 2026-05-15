@@ -20,6 +20,33 @@ import { useState, useEffect } from 'react'
 // ============================================================
 
 export function useFetch(asyncFn, deps = []) {
-  // TODO: Sinh viên hoàn thiện
-  return { data: null, loading: false, error: null }
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    let active = true
+
+    const fetchData = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const response = await asyncFn()
+        if (active) setData(response.data)
+      } catch (err) {
+        if (active) setError(err.message)
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
+    fetchData()
+
+    return () => {
+      active = false
+    }
+  }, deps)
+
+  return { data, loading, error }
 }
