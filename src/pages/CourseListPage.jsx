@@ -13,9 +13,26 @@ export default function CourseListPage() {
   // - Nếu có lỗi: hiển thị <div className="error-box">{error}</div>
   // - Khi xong: lưu danh sách vào state courses
   // ============================================================
-  const courses = []         // <-- thay state thật vào
-  const loading = false      // <-- thay state thật vào
-  const error = null         // <-- thay state thật vào
+  const [courses, setCourses] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    setLoading(true)
+    setError(null)
+
+    mockApi
+      .getCourses()
+      .then((data) => {
+        setCourses(data)
+      })
+      .catch((err) => {
+        setError(err?.message || 'Không thể tải danh sách khóa học')
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }, [])
 
 
   // ============================================================
@@ -24,9 +41,9 @@ export default function CourseListPage() {
   // - Tạo state: levelFilter (lọc theo trình độ: '', 'Cơ bản', 'Trung bình', 'Nâng cao')
   // - Tạo state: sortBy (sắp xếp: '', 'price-asc', 'price-desc')
   // ============================================================
-  const keyword = ''
-  const levelFilter = ''
-  const sortBy = ''
+  const [keyword, setKeyword] = useState('')
+  const [levelFilter, setLevelFilter] = useState('')
+  const [sortBy, setSortBy] = useState('')
 
 
   // ============================================================
@@ -68,15 +85,15 @@ export default function CourseListPage() {
           type="text"
           placeholder="🔍 Tìm theo tên khóa học..."
           value={keyword}
-          onChange={() => {/* TODO: setKeyword */}}
+          onChange={(e) => setKeyword(e.target.value)}
         />
-        <select value={levelFilter} onChange={() => {/* TODO: setLevelFilter */}}>
+        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
           <option value="">Tất cả trình độ</option>
           <option value="Cơ bản">Cơ bản</option>
           <option value="Trung bình">Trung bình</option>
           <option value="Nâng cao">Nâng cao</option>
         </select>
-        <select value={sortBy} onChange={() => {/* TODO: setSortBy */}}>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
           <option value="">Mặc định</option>
           <option value="price-asc">Giá tăng dần</option>
           <option value="price-desc">Giá giảm dần</option>
