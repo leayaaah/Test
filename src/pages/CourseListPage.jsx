@@ -4,6 +4,11 @@ import { useSetRecoilState } from 'recoil'
 import { cartState } from '../store/atoms'
 import { mockApi } from '../api/mockApi'
 
+const vndFormatter = new Intl.NumberFormat('vi-VN', {
+  style: 'currency',
+  currency: 'VND'
+})
+
 export default function CourseListPage() {
   // ============================================================
   // TODO (Câu 1 - useState + useEffect + Fetch API):
@@ -67,7 +72,8 @@ export default function CourseListPage() {
     const normalizedKeyword = keyword.trim().toLowerCase()
 
     const filtered = courses.filter(course => {
-      const matchedKeyword = course.title.toLowerCase().includes(normalizedKeyword)
+      const title = course.title?.toLowerCase() ?? ''
+      const matchedKeyword = title.includes(normalizedKeyword)
       const matchedLevel = !levelFilter || course.level === levelFilter
       return matchedKeyword && matchedLevel
     })
@@ -179,9 +185,6 @@ export default function CourseListPage() {
 // new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 // =============================================================
 function CourseCard({ course, onAddToCart }) {
-  const formatPrice = (price) =>
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
-
   return (
     <div className="course-card">
       <img src={course.image} alt={course.title} />
@@ -189,7 +192,7 @@ function CourseCard({ course, onAddToCart }) {
         <span className="level">{course.level}</span>
         <h3>{course.title}</h3>
         <p className="instructor">👨‍🏫 {course.instructor}</p>
-        <p className="price">{formatPrice(course.price)}</p>
+        <p className="price">{vndFormatter.format(course.price)}</p>
       </div>
       <div className="course-card-footer">
         <Link className="btn btn-outline btn-sm" to={`/courses/${course.id}`}>
